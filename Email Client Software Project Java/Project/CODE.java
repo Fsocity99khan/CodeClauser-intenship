@@ -1,200 +1,195 @@
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+package com.lcwd;
+
+import java.io.File;
 import java.util.Properties;
-import javax.mail.*;
 
-@SuppressWarnings("serial")
-public class  mail2 extends JFrame
-{
-	static String popServer;
-	static String popUser;
-	static String popPassword;
-               public static void main(String args[])
-               {
-            	   	//popServer=args[0];
-           			//popUser=args[1];
-           			//popPassword=args[2];
-                    JFrame frame = new mailframe();
-                    frame.setVisible(true);
-               }
-       }
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.Transport;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
 
-@SuppressWarnings("serial")
-class mailframe extends JFrame implements ActionListener
-{
-	JLabel lserver =new JLabel("SMTP Server");
-	static JTextField tserver = new JTextField(15);
-	JLabel luname =new JLabel("UserName");
-	static JTextField tuname = new JTextField(15);
-	JLabel lpass =new JLabel("Password");
-	static JPasswordField tpass = new JPasswordField(15);
-	static JTextArea message = new JTextArea(30,72);
+public class App {
+	public static void main(String[] args) {
+		
+		System.out.println("preparing to send message ...");
+		String message = "Hello , Dear, this is message for security check . ";
+		String subject = "CodersArea : Confirmation";
+		String to = "learncodewithdurgesh@gmail.com";
+		String from = "techsoftindia2018@gmail.com";
+		
+//		sendEmail(message,subject,to,from);
+		sendAttach(message,subject,to,from);
+	}
+
+	//this is responsible to send the message with attachment
+	private static void sendAttach(String message, String subject, String to, String from) {
+
+		//Variable for gmail
+		String host="smtp.gmail.com";
+		
+		//get the system properties
+		Properties properties = System.getProperties();
+		System.out.println("PROPERTIES "+properties);
+		
+		//setting important information to properties object
+		
+		//host set
+		properties.put("mail.smtp.host", host);
+		properties.put("mail.smtp.port","465");
+		properties.put("mail.smtp.ssl.enable","true");
+		properties.put("mail.smtp.auth","true");
+		
+		//Step 1: to get the session object..
+		Session session=Session.getInstance(properties, new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {				
+				return new PasswordAuthentication("techsoftindia2018@gmail.com", "*******");
+			}
+			
+			
+			
+		});
+		
+		session.setDebug(true);
+		
+		//Step 2 : compose the message [text,multi media]
+		MimeMessage m = new MimeMessage(session);
+		
+		try {
+		
+		//from email
+		m.setFrom(from);
+		
+		//adding recipient to message
+		m.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+		
+		//adding subject to message
+		m.setSubject(subject);
 	
-	public mailframe()
-	{
-		this.setSize(850,500);
-		this.setLayout(new FlowLayout(FlowLayout.LEFT));
 		
-		addWindowListener(new WindowAdapter()
-		{
-			public void windowClosing(WindowEvent e)
-			{
-				System.exit(0);
-			}
+		//attachement..
+		
+		//file path
+		String path="C:\\Users\\user\\Desktop\\ca_logo.png";
+		
+		
+		MimeMultipart mimeMultipart = new MimeMultipart();
+		//text
+		//file
+		
+		MimeBodyPart textMime = new MimeBodyPart();
+		
+		MimeBodyPart fileMime = new MimeBodyPart();
+		
+		try {
+			
+			textMime.setText(message);
+			
+			File file=new File(path);
+			fileMime.attachFile(file);
+			
+			
+			mimeMultipart.addBodyPart(textMime);
+			mimeMultipart.addBodyPart(fileMime);
+		
+			
+		} catch (Exception e) {
+			
+			e.printStackTrace();
 		}
-		);
 		
-		tpass.setEchoChar('*');
 		
-		this.add(lserver);
-		this.add(tserver);
-		this.add(luname);
-		this.add(tuname);
-		this.add(lpass);
-		this.add(tpass);
-
-		JButton b1 =new JButton("Fetch");
-		b1.addActionListener(this);
-		this.add(b1);
+		m.setContent(mimeMultipart);
 		
-		message.setEditable(false);
-		JScrollPane sp =  new JScrollPane();
-		message.add(sp);
-		this.add(message);
 		
-
+		//send 
+		
+		//Step 3 : send the message using Transport class
+		Transport.send(m);
+		
+		
+		
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+		
+		
+		
+		
+		
+	
+		System.out.println("Sent success...................");
+		
+		
 	}
-	public void actionPerformed(ActionEvent e) 
-	{
-		System.out.println("debug button");
-		fetchmail();		
-	}
-	@SuppressWarnings("deprecation")
-	private void fetchmail() 
-	{
-		
-		String popServer;
-		String popUser;
-		String popPassword;
-		
-		popServer = mailframe.tserver.getText();
-		popUser = mailframe.tuname.getText();
-		popPassword = mailframe.tpass.getText();
-		
-		System.out.println(popServer);
-		try
-		{
-			receive(popServer, popUser, popPassword);
-			//receive("mail.imparttechnologies.com","testproject@imparttechnologies.com", "password123");
-		}
-		catch (Exception ex)
-		{
-			System.out.println("Usage: java jmail"+" smtpServer address password ");
-		}
-		
-		//System.exit(0);
-		
-		}
-		public static void receive(String popServer, String popUser, String popPassword){
-			Store store=null;
-			Folder folder=null;
-			try
-			{
-				Properties props = System.getProperties();
-				Session session = Session.getDefaultInstance(props, null);
-				store = session.getStore("pop3");
-				store.connect(popServer, popUser, popPassword);
 
-				folder = store.getDefaultFolder();
-				if (folder == null) throw new Exception("No default folder");
-				
-				folder = folder.getFolder("INBOX");
-				if (folder == null) throw new Exception("No POP3 INBOX");
-				
-				folder.open(Folder.READ_ONLY);
-				Message msgs[] = folder.getMessages();
-				BufferedReader reader = new BufferedReader (new InputStreamReader(System.in));
-				
-				mailframe.message.setText("");				
-				int msgNum;
-				for (msgNum = 0; msgNum < msgs.length; msgNum++)
-				{
-					System.out.println(msgNum +": "+ msgs[msgNum].getFrom()[0]+ "\t" + msgs[msgNum].getSubject());
-					System.out.println("Do you want to read message? [YES to read/QUIT to end]");
-					String line = reader.readLine();
-					String y = "yes";
-					int j = line.compareTo(y);
-					if (j == 0)
-					{
-						//System.out.println(((Message)msgs[msgNum].getContent()).toString());
-						//System.out.println(msgNum +": "+ msgs[msgNum].getFrom()[0]+ "\t" + msgs[msgNum].getSubject());				
-						msgs[msgNum].writeTo(System.out);					
-						//test run start -------->
-						Object content = msgs[msgNum].getContent();
-						
-						if (content instanceof Multipart)
-						{
-				            StringBuffer messageContent = new StringBuffer();
-				            StringBuffer msg = new StringBuffer();
-				            Multipart multipart = (Multipart) content;
-				            for (int i = 0; i < multipart.getCount(); i++) 
-				            {
-				                Part part = (Part) multipart.getBodyPart(i);
-				                if (part.isMimeType("text/plain")) 
-				                {
-				                    msg = messageContent.append(part.getContent().toString());		                    
-				                    String msg1 = new String();
-				                    String from = new String();
-				                    String subj = new String();
-				                    int k ;
-				                    k = msgNum;
-				                    
-				                    msg1 = msg.toString();
-				                    subj = msgs[msgNum].getSubject();
-				                    from = msgs[msgNum].getFrom()[0].toString();
-				                    
-				                    mailframe.message.append("Message No:"+(k+1)+"\n");
-				                    mailframe.message.append("Message From:"+from+"\n");
-				                    mailframe.message.append("Message Subject:"+subj+"\n");
-				                    mailframe.message.append("\n"+msg1+"\n");
-				                    
-				                }
-				            }
-				            //return messageContent.toString();
-				        
-						} else 
-						{
-				            //return content.toString();
-				        }
-						
-						
-						//System.out.println("Debug 1 -> for 1 -> if yes");
-					}
-					else
-					{
-						System.out.println("Closing Previous Message. Going For Next.");
-						//break;
-					}
-					//msgs[msgNum].writeTo(System.out);
-				}
-				
-				//System.exit(0);
+	//this is responsible to send email..
+	private static void sendEmail(String message, String subject, String to, String from) {
+		
+		//Variable for gmail
+		String host="smtp.gmail.com";
+		
+		//get the system properties
+		Properties properties = System.getProperties();
+		System.out.println("PROPERTIES "+properties);
+		
+		//setting important information to properties object
+		
+		//host set
+		properties.put("mail.smtp.host", host);
+		properties.put("mail.smtp.port","465");
+		properties.put("mail.smtp.ssl.enable","true");
+		properties.put("mail.smtp.auth","true");
+		
+		//Step 1: to get the session object..
+		Session session=Session.getInstance(properties, new Authenticator() {
+			@Override
+			protected PasswordAuthentication getPasswordAuthentication() {				
+				return new PasswordAuthentication("pritam6102002@gmail.com", "Pujja@123");
 			}
-			catch (Exception ex)
-			{
-				ex.printStackTrace();
-			}
-			finally
-			{
-				try
-				{
-					if (folder!=null) folder.close(false);
-					if (store!=null) store.close();
-				}
-				catch (Exception ex2) {ex2.printStackTrace();}
-			}
+			
+			
+			
+		});
+		
+		session.setDebug(true);
+		
+		//Step 2 : compose the message [text,multi media]
+		MimeMessage m = new MimeMessage(session);
+		
+		try {
+		
+		//from email
+		m.setFrom(from);
+		
+		//adding recipient to message
+		m.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
+		
+		//adding subject to message
+		m.setSubject(subject);
+	
+		
+		//adding text to message
+		m.setText(message);
+		
+		//send 
+		
+		//Step 3 : send the message using Transport class
+		Transport.send(m);
+		
+		System.out.println("Sent success...................");
+		
+		
+		}catch (Exception e) {
+			e.printStackTrace();
 		}
+			
+	}
 }
